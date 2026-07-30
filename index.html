@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="LogoBMKG.png">
+  <title>Aplikasi Diseminasi Cuaca</title>
+  
+  <!-- Pake Bootstrap 5 dari CDN -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+  
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    
+    /* Header simpel aja */
+    .navbar-custom {
+      background-color: #ffffff;
+      border-bottom: 2px solid #e0e0e0;
+      box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      background-color: #fff;
+      border-bottom: 1px solid #eee;
+      font-weight: bold;
+      border-top-left-radius: 10px !important;
+      border-top-right-radius: 10px !important;
+    }
+
+    textarea {
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    /* Bikin hasil outputnya kayak di terminal */
+    .hasil-preview {
+      background-color: #144d37;
+      color: #ffff;
+      font-family: monospace;
+      padding: 15px;
+      border-radius: 5px;
+      min-height: 250px;
+      white-space: pre-wrap;
+    }
+
+    .tabel-info th {
+      color: #6c757d;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-custom py-3 mb-4">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <img src="LogoBMKG.png" alt="Logo BMKG" width="40" height="40" class="me-2">
+        <h4 class="m-0 text-primary fw-bold">Diseminasi WhatsApp</h4>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="row">
+      
+      <!-- Bagian Input Data -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header text-primary">
+            1. Masukkan Data ME48
+          </div>
+          <div class="card-body">
+            <label class="form-label fw-bold">Copy-Paste dari File ME48 (TSV)</label>
+            <p class="text-muted" style="font-size: 12px;">Paste minimal 4 baris data dari jam pengamatan terakhir.</p>
+            
+            <textarea id="txtInput" class="form-control" rows="8" placeholder="Paste di sini..."></textarea>
+            
+            <!-- Tempat nampilin pesan error kalau datanya salah -->
+            <div id="alertError" class="alert alert-danger mt-3 d-none" role="alert">
+              Data error atau tidak lengkap!
+            </div>
+
+            <hr>
+            
+            <label class="form-label fw-bold mt-2">Hasil Ekstrak Data:</label>
+            <table class="table table-bordered tabel-info mt-2">
+              <tbody>
+                <tr>
+                  <th width="40%">Jam (UTC)</th>
+                  <td id="tdJam">-</td>
+                </tr>
+                <tr>
+                  <th>Jarak Pandang</th>
+                  <td id="tdJarak">-</td>
+                </tr>
+                <tr>
+                  <th>Suhu</th>
+                  <td id="tdSuhu">-</td>
+                </tr>
+                <tr>
+                  <th>Kelembaban</th>
+                  <td id="tdLembab">-</td>
+                </tr>
+                <tr>
+                  <th>Cuaca</th>
+                  <td id="tdCuaca">-</td>
+                </tr>
+                <tr>
+                  <th>Angin</th>
+                  <td id="tdAngin">-</td>
+                </tr>
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Bagian Output / Preview -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header text-primary">
+            2. Pratinjau Pesan WhatsApp
+          </div>
+          <div class="card-body">
+            
+            <div id="boxPreview" class="hasil-preview">Teks akan muncul di sini...</div>
+
+            
+
+            <div class="d-flex gap-2 mt-4">
+              <button id="btnCopy" class="btn btn-primary w-50" disabled>📋 Copy Teks</button>
+              <button id="btnShare" class="btn btn-success w-50" disabled>📲 Share WA</button>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="text-center text-muted mt-5 pb-4">
+    <small>&copy; 2026 - Dibuat untuk internal BMKG Kotawaringin Timur</small>
+    <small><br>Agvenditan Laprima</small>
+  </footer>
+
+  <!-- SCRIPT JAVASCRIPT -->
+  <script>
+    // Deklarasi variabel ngambil element dari HTML
+    var txtInput = document.getElementById('txtInput');
+    var alertError = document.getElementById('alertError');
+    var boxPreview = document.getElementById('boxPreview');
+    var btnCopy = document.getElementById('btnCopy');
+    var btnShare = document.getElementById('btnShare');
+    
+    // Variabel buat nampilin data di tabel
+    var tdJam = document.getElementById('tdJam');
+    var tdJarak = document.getElementById('tdJarak');
+    var tdSuhu = document.getElementById('tdSuhu');
+    var tdLembab = document.getElementById('tdLembab');
+    var tdCuaca = document.getElementById('tdCuaca');
+    var tdAngin = document.getElementById('tdAngin');
+
+    var textPesanFinal = "";
+
+    // Load nama grup dari local storage biar ga ngetik ulang terus
+    // if(localStorage.getItem('nama_grup_wa')) {
+    //   document.getElementById('txtGrup').value = localStorage.getItem('nama_grup_wa');
+    // }
+
+    // document.getElementById('txtGrup').addEventListener('keyup', function() {
+    //   localStorage.setItem('nama_grup_wa', this.value);
+    // });
+
+    // Fungsi buat dapetin tanggal sekarang format Indonesia
+    function getTanggalSekarang() {
+      var d = new Date();
+      var bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      return d.getDate() + " " + bulan[d.getMonth()] + " " + d.getFullYear();
+    }
+
+    // Fungsi buat nampilin jam sekarang WIB
+    function getJamWIB() {
+      var d = new Date();
+      var jam = d.getHours();
+      var menit = d.getMinutes();
+      if(jam < 10) jam = "0" + jam;
+      if(menit < 10) menit = "0" + menit;
+      return jam + ":" + menit;
+    }
+
+    // Konversi arah angin dari derajat ke string
+    function konversiArahAngin(derajat) {
+      var arah = ["Utara", "Timur Laut", "Timur", "Tenggara", "Selatan", "Barat Daya", "Barat", "Barat Laut"];
+      var index = Math.round(derajat / 45) % 8;
+      return arah[index];
+    }
+
+    // Konversi jumlah awan (okta) ke kondisi cuaca
+    function konversiCuaca(okta) {
+      var angka = parseInt(okta);
+      if(angka <= 2) return "Cerah";
+      if(angka == 3) return "Cerah Berawan";
+      if(angka >= 4 && angka <= 7) return "Berawan";
+      if(angka == 8) return "Mendung / Tertutup";
+      return "-";
+    }
+
+    // Fungsi pas text area diisi/dipaste
+    txtInput.addEventListener('input', function() {
+      var isiText = txtInput.value;
+      
+      // Kalau kosong, reset semua
+      if(isiText.trim() === "") {
+        resetTampilan();
+        return;
+      }
+
+      // Pisahin berdasarkan baris baru (enter)
+      var baris = isiText.split('\n');
+      var dataBersih = [];
+      
+      // Filter baris kosong sama baris yang ada tulisan AAXX
+      for(var i = 0; i < baris.length; i++) {
+        var cekBaris = baris[i].replace(/\t/g, '').trim();
+        if(cekBaris !== "" && cekBaris.indexOf("AAXX") === -1) {
+          dataBersih.push(baris[i]);
+        }
+      }
+
+      // Validasi: harus ada minimal 4 baris
+      if(dataBersih.length < 4) {
+        tampilError("Datanya kurang! Pastikan copy 4 baris per jam.");
+        resetTampilan();
+        return;
+      }
+
+      // Ambil 4 baris terakhir
+      var totalData = dataBersih.length;
+      var baris1 = dataBersih[totalData - 4].split('\t');
+      var baris2 = dataBersih[totalData - 3].split('\t');
+      var baris3 = dataBersih[totalData - 2].split('\t');
+      var baris4 = dataBersih[totalData - 1].split('\t');
+
+      try {
+        // Mapping kolom berdasarkan urutan index (Mulai dari 0)
+        var dataJam = baris1[0].trim();
+        var dataJarak = baris1[2].trim();
+        var dataSuhu = baris1[7].trim();
+        var dataOkta = baris3[12].trim(); // Okta di baris 3 kolom 12
+        var dataArah = baris2[1].trim();  // Arah angin baris 2 kolom 1
+        var dataLembab = baris3[8].trim(); 
+        var dataKecepatan = baris4[1].trim();
+
+        // Cek kalau datanya kosong banget
+        if(!dataJam && !dataSuhu) {
+          tampilError("Format kolom salah, pastikan ngopinya bener dari ME48.");
+          return;
+        }
+
+        // Proses cuaca
+        var hasilCuaca = konversiCuaca(dataOkta);
+
+        // Proses arah angin
+        var hasilArah = "";
+        if(dataArah === "-" || dataArah.toLowerCase() === "calm" || dataArah.toLowerCase() === "vrb") {
+          hasilArah = "Tenang / Variabel";
+        } else {
+          // Replace koma jadi titik biar bisa di float
+          var deg = parseFloat(dataArah.replace(',', '.'));
+          hasilArah = konversiArahAngin(deg) + " (" + deg + "°)";
+        }
+
+        // Proses kecepatan angin (ubah knot ke km/jam dengan kali 2 aja biar simpel)
+        var hasilKec = "";
+        if(dataKecepatan.toLowerCase() === "calm" || !dataKecepatan) {
+          hasilKec = "0 km/jam";
+        } else {
+          var knot = parseFloat(dataKecepatan.replace(',', '.'));
+          var kmj = Math.round(knot * 2);
+          hasilKec = kmj + " km/jam";
+        }
+
+        // Tampilin ke tabel di HTML
+        tdJam.innerHTML = dataJam || "-";
+        tdJarak.innerHTML = dataJarak ? dataJarak + " KM" : "-";
+        tdSuhu.innerHTML = dataSuhu ? dataSuhu + " °C" : "-";
+        tdLembab.innerHTML = dataLembab ? dataLembab + " %" : "-";
+        tdCuaca.innerHTML = hasilCuaca;
+        tdAngin.innerHTML = hasilArah + " | " + hasilKec;
+
+        // Susun pesan untuk WA
+        textPesanFinal = "*KONDISI CUACA SAMPIT*\n";
+        textPesanFinal += "*SMQ (WAGS)*\n";
+        textPesanFinal += "*TGL : " + getTanggalSekarang() + "*\n";
+        textPesanFinal += "*JAM : " + getJamWIB() + " WIB*\n";
+        textPesanFinal += "==================================\n";
+        textPesanFinal += "```JARAK PANDANG : " + (dataJarak || "-") + " KM\n";
+        textPesanFinal += "CUACA         : " + hasilCuaca + "\n";
+        textPesanFinal += "SUHU          : " + (dataSuhu || "-") + " °C\n";
+        textPesanFinal += "KELEMBABAN    : " + (dataLembab || "-") + " %\n";
+        textPesanFinal += "ARAH ANGIN    : " + hasilArah + "\n";
+        textPesanFinal += "KEC. ANGIN    : " + hasilKec + "```\n";
+        textPesanFinal += "==================================\n";
+        textPesanFinal += "_KEC. = Kecepatan_\n";
+        textPesanFinal += "\n"; 
+        textPesanFinal += "_*Sumber : BMKG KOTIM*_";
+
+        // Tampilin di box hitam
+        boxPreview.innerHTML = textPesanFinal;
+        
+        // Aktifin tombol
+        btnCopy.disabled = false;
+        btnShare.disabled = false;
+        alertError.classList.add('d-none'); // Sembunyiin error
+
+      } catch(err) {
+        tampilError("Gagal ekstrak data. Error code: " + err.message);
+      }
+    });
+
+    // Fitur tombol copy
+    btnCopy.addEventListener('click', function() {
+      navigator.clipboard.writeText(textPesanFinal).then(function() {
+        btnCopy.innerHTML = "✅ Berhasil Copy!";
+        btnCopy.classList.replace('btn-primary', 'btn-success');
+        
+        // Balikin ke semula setelah 2 detik
+        setTimeout(function() {
+          btnCopy.innerHTML = "📋 Copy Teks";
+          btnCopy.classList.replace('btn-success', 'btn-primary');
+        }, 2000);
+      }).catch(function() {
+        alert("Gagal copy otomatis, silahkan block textnya trus copy manual ya.");
+      });
+    });
+
+    // Fitur tombol share WA
+    btnShare.addEventListener('click', function() {
+      var encodePesan = encodeURIComponent(textPesanFinal);
+      window.open("https://api.whatsapp.com/send?text=" + encodePesan, "_blank");
+    });
+
+    // Fungsi pembantu buat nampilin error
+    function tampilError(pesan) {
+      alertError.innerHTML = pesan;
+      alertError.classList.remove('d-none');
+      btnCopy.disabled = true;
+      btnShare.disabled = true;
+    }
+
+    // Fungsi buat reset tampilan ke awal
+    function resetTampilan() {
+      tdJam.innerHTML = "-";
+      tdJarak.innerHTML = "-";
+      tdSuhu.innerHTML = "-";
+      tdLembab.innerHTML = "-";
+      tdCuaca.innerHTML = "-";
+      tdAngin.innerHTML = "-";
+      boxPreview.innerHTML = "Teks akan muncul di sini...";
+      alertError.classList.add('d-none');
+      btnCopy.disabled = true;
+      btnShare.disabled = true;
+      textPesanFinal = "";
+    }
+  </script>
+</body>
+</html>

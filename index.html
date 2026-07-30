@@ -97,8 +97,12 @@
             <table class="table table-bordered tabel-info mt-2">
               <tbody>
                 <tr>
-                  <th width="40%">Jam (UTC)</th>
+                  <th width="40%">Jam (WIB)</th>
                   <td id="tdJam">-</td>
+                </tr>
+                <tr>
+                  <th width="40%">Jam (UTC)</th>
+                  <td id="tdJamutc">-</td>
                 </tr>
                 <tr>
                   <th>Jarak Pandang</th>
@@ -167,6 +171,7 @@
     
     // Variabel buat nampilin data di tabel
     var tdJam = document.getElementById('tdJam');
+    var tdJamutc = document.getElementById('tdJamutc');
     var tdJarak = document.getElementById('tdJarak');
     var tdSuhu = document.getElementById('tdSuhu');
     var tdLembab = document.getElementById('tdLembab');
@@ -200,6 +205,24 @@
       if(menit < 10) menit = "0" + menit;
       return jam + ":" + menit;
     }
+
+    function getJamUTC(JamWIB) {
+      var jamAngka = parseInt(JamWIB.substring(0, 2));
+      if (isNaN(jamAngka)) {
+        return "-";
+      }
+      
+      var jamUTC = jamAngka - 7;
+      if (jamUTC < 0) {
+        jamUTC = jamUTC + 24; // Menyesuaikan jika jam UTC negatif
+      }
+
+      if (jamUTC < 10) {
+        jamUTC = "0" + jamUTC; // Menambahkan angka 0 jika kurang dari 10
+      }
+
+    return jamUTC + ":00";
+  }
 
     // Konversi arah angin dari derajat ke string
     function konversiArahAngin(derajat) {
@@ -295,6 +318,7 @@
 
         // Tampilin ke tabel di HTML
         tdJam.innerHTML = dataJam || "-";
+        tdJamutc.innerHTML = getJamUTC(dataJam) || "-";
         tdJarak.innerHTML = dataJarak ? dataJarak + " KM" : "-";
         tdSuhu.innerHTML = dataSuhu ? dataSuhu + " °C" : "-";
         tdLembab.innerHTML = dataLembab ? dataLembab + " %" : "-";
@@ -364,6 +388,7 @@
     // Fungsi buat reset tampilan ke awal
     function resetTampilan() {
       tdJam.innerHTML = "-";
+      tdJamutc.innerHTML = "-";
       tdJarak.innerHTML = "-";
       tdSuhu.innerHTML = "-";
       tdLembab.innerHTML = "-";

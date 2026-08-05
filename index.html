@@ -147,6 +147,10 @@
               <button id="btnCopy" class="btn btn-primary w-50" disabled>📋 Copy Teks</button>
               <button id="btnShare" class="btn btn-success w-50" disabled>📲 Share WA</button>
             </div>
+
+            <div class="d-flex gap-2 mt-4">
+              <p>Periksa kembali pesan yang akan dikirim sudah sesuai dengan data ME48, aplikasi bisa melakukan kesalahan.</p>
+            </div>
             
           </div>
         </div>
@@ -231,6 +235,40 @@
       return arah[index];
     }
 
+    // ================== KONDISI CUACA KHUSUS (Mist/Smoke/Haze/Fog dkk) ==================
+    // Kamus kata kunci cuaca khusus -> teks yang ditampilkan.
+    // Urutan array = urutan prioritas kalau ada lebih dari satu kata kunci ketemu sekaligus.
+    // Tinggal tambah baris baru di sini kalau mau menambah kondisi lain di masa depan,
+    // tidak perlu ubah logika pencarian.
+    var KAMUS_CUACA_KHUSUS = [
+      { pola: /\bsmoke\b/i, label: "Kabut Asap" },
+      { pola: /\bfog\b/i,   label: "Kabut Tebal" },
+      { pola: /\bmist\b/i,  label: "Kabut" },
+      { pola: /\bhaze\b/i,  label: "Halimun" }
+    ];
+
+    // Cari kondisi cuaca khusus di SELURUH blok 4 baris (dicari sebagai teks,
+    // jadi tidak bergantung kolom keberapa katanya nongol).
+    // blokBarisRaw = array of string, isinya baris-baris mentah (belum di-split tab) dari 1 blok observasi.
+    function cariCuacaKhusus(blokBarisRaw) {
+      var gabunganTeks = blokBarisRaw.join(" \n ");
+      for (var i = 0; i < KAMUS_CUACA_KHUSUS.length; i++) {
+        if (KAMUS_CUACA_KHUSUS[i].pola.test(gabunganTeks)) {
+          return KAMUS_CUACA_KHUSUS[i].label;
+        }
+      }
+      return null; // tidak ada kondisi cuaca khusus ditemukan
+    }
+
+    // Fungsi utama penentu cuaca:
+    // PRIORITAS 1 -> kata kunci khusus (Mist/Smoke/Haze/Fog/dst) kalau ketemu di blok
+    // PRIORITAS 2 -> kalau tidak ketemu, baru pakai logika okta seperti biasa
+    function tentukanCuaca(blokBarisRaw, okta) {
+      var khusus = cariCuacaKhusus(blokBarisRaw);
+      if (khusus) return khusus;
+      return konversiCuaca(okta);
+    }
+
     // Konversi jumlah awan (okta) ke kondisi cuaca
     function konversiCuaca(okta) {
       var angka = parseInt(okta);
@@ -272,6 +310,7 @@
 
       // Ambil 4 baris terakhir
       var totalData = dataBersih.length;
+      var blokBarisRaw = dataBersih.slice(totalData - 4); // 4 baris mentah, buat cari kata kunci cuaca khusus
       var baris1 = dataBersih[totalData - 4].split('\t');
       var baris2 = dataBersih[totalData - 3].split('\t');
       var baris3 = dataBersih[totalData - 2].split('\t');
@@ -293,8 +332,8 @@
           return;
         }
 
-        // Proses cuaca
-        var hasilCuaca = konversiCuaca(dataOkta);
+        // Proses cuaca (prioritas 1: kata kunci khusus, prioritas 2: logika okta)
+        var hasilCuaca = tentukanCuaca(blokBarisRaw, dataOkta);
 
         // Proses arah angin
         var hasilArah = "";
@@ -312,7 +351,7 @@
           hasilKec = "0 km/jam";
         } else {
           var knot = parseFloat(dataKecepatan.replace(',', '.'));
-          var kmj = Math.round(knot * 2);
+          var kmj = Math.round(knot * 1.852);
           hasilKec = kmj + " km/jam";
         }
 
@@ -343,7 +382,7 @@
         textPesanFinal += "_*Sumber : BMKG KOTIM*_";
 
         // Tampilin di box hitam
-        boxPreview.innerHTML = textPesanFinal;
+        boxPreview.textContent = textPesanFinal;
         
         // Aktifin tombol
         btnCopy.disabled = false;

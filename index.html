@@ -196,7 +196,7 @@
     // Fungsi buat dapetin tanggal sekarang format Indonesia
     function getTanggalSekarang() {
       var d = new Date();
-      var bulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      var bulan = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
       return d.getDate() + " " + bulan[d.getMonth()] + " " + d.getFullYear();
     }
 
@@ -230,7 +230,7 @@
 
     // Konversi arah angin dari derajat ke string
     function konversiArahAngin(derajat) {
-      var arah = ["Utara", "Timur Laut", "Timur", "Tenggara", "Selatan", "Barat Daya", "Barat", "Barat Laut"];
+      var arah = ["UTARA", "TIMUR LAUT", "TIMUR", "TENGGARA", "SELATAN", "BARAT DAYA", "BARAT", "BARAT LAUT"];
       var index = Math.round(derajat / 45) % 8;
       return arah[index];
     }
@@ -241,10 +241,10 @@
     // Tinggal tambah baris baru di sini kalau mau menambah kondisi lain di masa depan,
     // tidak perlu ubah logika pencarian.
     var KAMUS_CUACA_KHUSUS = [
-      { pola: /\bsmoke\b/i, label: "Kabut Asap" },
-      { pola: /\bfog\b/i,   label: "Kabut Tebal" },
-      { pola: /\bmist\b/i,  label: "Kabut" },
-      { pola: /\bhaze\b/i,  label: "Udara Kabur" }
+      { pola: /\bsmoke\b/i, label: "KABUT ASAP" },
+      { pola: /\bfog\b/i,   label: "KABUT TEBAL" },
+      { pola: /\bmist\b/i,  label: "KABUT" },
+      { pola: /\bhaze\b/i,  label: "UDARA KABUR" }
     ];
 
     // Cari kondisi cuaca khusus di SELURUH blok 4 baris (dicari sebagai teks,
@@ -272,10 +272,10 @@
     // Konversi jumlah awan (okta) ke kondisi cuaca
     function konversiCuaca(okta) {
       var angka = parseInt(okta);
-      if(angka <= 2) return "Cerah";
-      if(angka == 3) return "Cerah Berawan";
-      if(angka >= 4 && angka <= 7) return "Berawan";
-      if(angka == 8) return "Mendung / Tertutup";
+      if(angka <= 2) return "CERAH";
+      if(angka == 3) return "CERAH BERAWAN";
+      if(angka >= 4 && angka <= 7) return "BERAWAN";
+      if(angka == 8) return "MENDUNG / TERTUTUP";
       return "-";
     }
 
@@ -374,7 +374,7 @@
         textPesanFinal += "CUACA         : " + hasilCuaca + "\n";
         textPesanFinal += "SUHU          : " + (dataSuhu || "-") + " °C\n";
         textPesanFinal += "KELEMBABAN    : " + (dataLembab || "-") + " %\n";
-        textPesanFinal += "ARAH ANGIN    : Dari " + hasilArah + "\n";
+        textPesanFinal += "ARAH ANGIN    : DARI " + hasilArah + "\n";
         textPesanFinal += "KEC. ANGIN    : " + hasilKec + "```\n";
         textPesanFinal += "==================================\n";
         textPesanFinal += "_KEC. = Kecepatan_\n";

@@ -235,6 +235,18 @@
       return arah[index];
     }
 
+    // Format jarak pandang: kalau di bawah 1 KM, tampilkan dalam METER; kalau 1 KM ke atas, tetap KM
+    function formatJarakPandang(rawJarak) {
+      if (!rawJarak) return "-";
+      var nilaiKm = parseFloat(rawJarak.replace(',', '.'));
+      if (isNaN(nilaiKm)) return rawJarak; // bukan angka, tampilkan apa adanya
+      if (nilaiKm < 1) {
+        var meter = Math.round(nilaiKm * 1000);
+        return meter + " METER";
+      }
+      return rawJarak + " KM";
+    }
+
     // ================== KONDISI CUACA KHUSUS (Mist/Smoke/Haze/Fog dkk) ==================
     // Kamus kata kunci cuaca khusus -> teks yang ditampilkan.
     // Urutan array = urutan prioritas kalau ada lebih dari satu kata kunci ketemu sekaligus.
@@ -335,6 +347,9 @@
         // Proses cuaca (prioritas 1: kata kunci khusus, prioritas 2: logika okta)
         var hasilCuaca = tentukanCuaca(blokBarisRaw, dataOkta);
 
+        // Proses jarak pandang (di bawah 1 KM ditulis dalam METER)
+        var hasilJarak = formatJarakPandang(dataJarak);
+
         // Proses arah angin
         var hasilArah = "";
         if(dataArah === "-" || dataArah.toLowerCase() === "calm" || dataArah.toLowerCase() === "vrb") {
@@ -358,7 +373,7 @@
         // Tampilin ke tabel di HTML
         tdJam.innerHTML = dataJam || "-";
         tdJamutc.innerHTML = getJamUTC(dataJam) || "-";
-        tdJarak.innerHTML = dataJarak ? dataJarak + " KM" : "-";
+        tdJarak.innerHTML = hasilJarak;
         tdSuhu.innerHTML = dataSuhu ? dataSuhu + " °C" : "-";
         tdLembab.innerHTML = dataLembab ? dataLembab + " %" : "-";
         tdCuaca.innerHTML = hasilCuaca;
@@ -370,7 +385,7 @@
         textPesanFinal += "*TGL : " + getTanggalSekarang() + "*\n";
         textPesanFinal += "*JAM : " + dataJam + " WIB*\n";
         textPesanFinal += "==================================\n";
-        textPesanFinal += "```JARAK PANDANG : " + (dataJarak || "-") + " KM\n";
+        textPesanFinal += "```JARAK PANDANG : " + hasilJarak + "\n";
         textPesanFinal += "CUACA         : " + hasilCuaca + "\n";
         textPesanFinal += "SUHU          : " + (dataSuhu || "-") + " °C\n";
         textPesanFinal += "KELEMBABAN    : " + (dataLembab || "-") + " %\n";

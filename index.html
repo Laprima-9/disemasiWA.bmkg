@@ -389,7 +389,7 @@
         textPesanFinal += "CUACA         : " + hasilCuaca + "\n";
         textPesanFinal += "SUHU          : " + (dataSuhu || "-") + " °C\n";
         textPesanFinal += "KELEMBABAN    : " + (dataLembab || "-") + " %\n";
-        textPesanFinal += "ARAH ANGIN    : DARI " + hasilArah + "\n";
+        textPesanFinal += "ARAH ANGIN    : " + (hasilArah === "CALM" ? hasilArah : "DARI " + hasilArah) + "\n";
         textPesanFinal += "KEC. ANGIN    : " + hasilKec + "```\n";
         textPesanFinal += "==================================\n";
         textPesanFinal += "_KEC. = Kecepatan_\n";
